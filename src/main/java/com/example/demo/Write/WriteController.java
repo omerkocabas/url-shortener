@@ -15,30 +15,22 @@ import java.util.Map;
 @RestController
 public class WriteController {
 
-    private final ReadRepository readRepository;
+    private final WriteRepository writeRepository;
+    private final WriteService writeService;
 
     @Autowired
-    public WriteController(ReadRepository readRepository){
-        this.readRepository = readRepository;
+    public WriteController(WriteRepository writeRepository, WriteService writeService){
+        this.writeRepository = writeRepository;
+        this.writeService = writeService;
 
     }
 
     @PostMapping("/api/v1")
     public String insertUrl(@RequestBody Map<String, String> url){
-        MessageDigest md = null;
-        try {
-            md = MessageDigest.getInstance("MD5");
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        }
-
+        String stored_hash = writeService.GenerateHash(url);
         var longUrl = url.get("url");
-        md.update(longUrl.getBytes());
-        byte[] digest = md.digest();
-        String hash = String.format("%032x", new BigInteger(1, digest));
-        String stored_hash = hash.substring(0,7);
         var model = new Model(1L,stored_hash, longUrl);
-        readRepository.save(model);
+        writeRepository.save(model);
         return "localhost:8080/"+ stored_hash;
     }
 }

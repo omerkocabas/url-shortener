@@ -9,17 +9,21 @@ import com.example.demo.Model;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Controller
+@RestController
 public class ReadController {
     public final ReadRepository readRepository;
 
     public ReadController(ReadRepository readRepository){
         this.readRepository = readRepository;
     }
-    @GetMapping("/{short_url}")
-    public String getUrl(@PathVariable String short_url){
-        var urlList = readRepository.findByShortUrl(short_url).stream().toList();
-        var longUrl = urlList.getFirst().getLongUrl();
-        return "redirect:" +  longUrl;
+    @GetMapping("/api/v1/{short_url}")
+    public Model getUrl(@PathVariable String short_url){
+        var modelList =  readRepository.findByShortUrl(short_url).stream().collect(Collectors.toList());
+        try{
+            return modelList.getFirst();
+        } catch (Exception e) {
+            return null;
+        }
+
     }
 }

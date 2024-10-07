@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Shortener</title>
+    <script>
+        async function shortenUrl() {
+            event.preventDefault();
+            const urlInput = document.getElementById('urlInput').value;
+
+            const data = { url: urlInput };
+
+            const response = await fetch('/api/v1', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.text();
+            document.getElementById('result').innerText = result;
+        }
+    </script>
+</head>
+<body>
+<h1>URL Shortener</h1>
+<input type="text" id="urlInput" placeholder="Enter URL here" required>
+<button onclick="shortenUrl()">Shorten URL</button>
+<div id="result"></div>
+</body>
+</html>
