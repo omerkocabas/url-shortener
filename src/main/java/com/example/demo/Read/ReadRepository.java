@@ -7,8 +7,9 @@ import org.springframework.stereotype.Repository;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ReadRepository extends JpaRepository<Model, Long> {
-    List<Model> findByShortUrl(String string);
+    Optional<Model> findByShortUrl(String string);
 }

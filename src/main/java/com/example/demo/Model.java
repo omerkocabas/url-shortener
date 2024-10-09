@@ -27,8 +27,6 @@ public class Model {
     @Column
     private String longUrl;
 
-    // Getters and Setters
-
     public Long getId() {
         return id;
     }
