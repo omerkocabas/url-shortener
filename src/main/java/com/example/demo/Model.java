@@ -1,17 +1,15 @@
 package com.example.demo;
-import jakarta.annotation.PostConstruct;
-import org.springframework.web.bind.annotation.RestController;
-
-
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.*;
 
+import java.time.LocalDateTime;
+
 @Entity
 public class Model {
 
-    public Model(Long id, String shortUrl, String longUrl){
+    public Model(Long id, String shortUrl, String longUrl, LocalDateTime createdAt){
         this.shortUrl = shortUrl;
         this.longUrl = longUrl;
     }
@@ -22,10 +20,12 @@ public class Model {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @Column
+    @Column(nullable = false, name = "short_url")
     private String shortUrl;
-    @Column
+    @Column(nullable = false, name = "long_url")
     private String longUrl;
+    @Column(nullable = false, name = "created_at")
+    private LocalDateTime createdAt = LocalDateTime.now();
 
     public Long getId() {
         return id;
@@ -49,5 +49,13 @@ public class Model {
 
     public void setLongUrl(String longUrl) {
         this.longUrl = longUrl;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
     }
 }

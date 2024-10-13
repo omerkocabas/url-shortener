@@ -1,10 +1,13 @@
 package com.example.demo.Write;
 
+import com.example.demo.Constants;
+import com.example.demo.Exception.UrlNotValidException;
 import com.example.demo.Model;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import java.math.BigInteger;
@@ -12,6 +15,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -28,7 +32,6 @@ public class WriteService {
     public WriteService(WriteRepository writeRepository){
         this.writeRepository = writeRepository;
     }
-
 
     private String GenerateHash(Map<String, String> url){
         MessageDigest md = null;
@@ -48,14 +51,22 @@ public class WriteService {
     public ResponseEntity<String> insertUrl(@RequestBody Map<String, String> url){
         var longUrl = url.get("url");
         if(!isValidUrl(longUrl)){
-            throw new RuntimeException();
+            throw new UrlNotValidException(Constants.urlNotValid + longUrl);
+        }
+        var readModel = writeRepository.findByLongUrl(longUrl);
+        if(readModel.isEmpty()){
+            String stored_hash = this.GenerateHash(url);
+            var model = new Model(1L,stored_hash, longUrl, LocalDateTime.now());
+            writeRepository.save(model);
+            var returnString = Constants.baseUrl + stored_hash;
+            return new ResponseEntity<>(returnString, HttpStatus.CREATED);
+        }
+        else{
+            var shortUrl = readModel.get().getShortUrl();
+            var returnString = Constants.baseUrl + shortUrl;
+            return new ResponseEntity<>(returnString, HttpStatus.OK);
         }
 
-        String stored_hash = this.GenerateHash(url);
-        var model = new Model(1L,stored_hash, longUrl);
-        writeRepository.save(model);
-        var returnString = "localhost:8080/"+ stored_hash;
-        return new ResponseEntity<>(returnString, HttpStatus.CREATED);
     }
 
     private boolean isValidUrl(String input) {
