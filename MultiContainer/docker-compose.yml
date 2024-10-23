@@ -1,0 +1,127 @@
+version: '3.8'
+services:
+  db:
+    image: postgres:15
+    container_name: postgres-container
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: mydatabase
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - kafka-network
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    networks:
+      - kafka-network
+
+  kafka:
+    image: wurstmeister/kafka:latest
+    container_name: kafka
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_CREATE_TOPICS: "url_visited:1:1"
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    networks:
+    - kafka-network
+
+  couchbase:
+    image: couchbase:community-7.1.1
+    container_name: couchbase
+    environment:
+      - COUCHBASE_ADMINISTRATOR_USERNAME=couchbase
+      - COUCHBASE_ADMINISTRATOR_PASSWORD=couchbase
+    ports:
+      - "8091:8091"
+      - "8092:8092"
+      - "8093:8093"
+      - "11210:11210"
+      - "11207:11207"
+    volumes:
+      - ./initcouchbase.sh:/opt/couchbase/init.sh
+    networks:
+      - kafka-network
+    entrypoint: /bin/bash -c "chmod +x /opt/couchbase/init.sh && /opt/couchbase/init.sh & /entrypoint.sh couchbase-server"
+
+  webserver:
+    build:
+      context: ./WebServer
+    container_name: webserver
+    depends_on:
+      - db
+      - kafka
+      - couchbase
+    ports:
+      - "8080:8080"
+    networks:
+    - kafka-network
+
+  read:
+    build:
+      context: ./Read
+    container_name: read
+    depends_on:
+      - webserver
+    ports:
+      - "8081:8080"
+    networks:
+      - kafka-network
+
+  write:
+    build:
+      context: ./Write
+    container_name: write
+    depends_on:
+      - webserver
+    ports:
+      - "8082:8080"
+    networks:
+      - kafka-network
+
+  analytics:
+    build:
+      context: ./Analytics
+    container_name: analytics
+    depends_on:
+      - read
+    ports:
+      - "8083:8080"
+    networks:
+      - kafka-network
+
+  cleanup:
+    build:
+      context: ./Cleanup
+    container_name: cleanup
+    depends_on:
+      - write
+    ports:
+      - "8084:8080"
+    networks:
+    - kafka-network
+
+volumes:
+  pgdata:
+
+networks:
+  kafka-network:
+    driver: bridge
+
+
