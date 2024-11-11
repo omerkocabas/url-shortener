@@ -13,6 +13,7 @@ import java.net.URISyntaxException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.regex.Pattern;
 import com.example.Write.Repository.WriteRepository;
@@ -32,7 +33,7 @@ public class WriteService {
         this.writeRepository = writeRepository;
     }
 
-    private String GenerateHash(Map<String, String> url){
+    private String generateHash(String longUrl){
         MessageDigest md = null;
         try {
             md = MessageDigest.getInstance("MD5");
@@ -40,8 +41,9 @@ public class WriteService {
             throw new RuntimeException(e);
         }
 
-        var longUrl = url.get("url");
-        md.update(longUrl.getBytes());
+        var currentTimeStamp = getCurrentTimestampString();
+        var stringToBeHashed = longUrl + currentTimeStamp;
+        md.update(stringToBeHashed.getBytes());
         byte[] digest = md.digest();
         String hash = String.format("%032x", new BigInteger(1, digest));
         return hash.substring(0,7);
@@ -54,7 +56,7 @@ public class WriteService {
         }
         var readModel = writeRepository.findByLongUrl(longUrl);
         if(readModel.isEmpty()){
-            String stored_hash = this.GenerateHash(url);
+            String stored_hash = this.createHash(longUrl);
             var model = new Model(1L,stored_hash, longUrl, LocalDateTime.now());
             writeRepository.save(model);
             var returnString = Constants.baseUrl + stored_hash;
@@ -78,5 +80,22 @@ public class WriteService {
             }
         }
         return false;
+    }
+
+    private String getCurrentTimestampString() {
+        LocalDateTime now = LocalDateTime.now();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
+        return now.format(formatter);
+    }
+
+    private String createHash(String longUrl) {
+        while(true){
+            var hash = generateHash(longUrl);
+            var readModel = writeRepository.findByShortUrl(hash);
+            if(readModel.isEmpty()){
+                return hash;
+            }
+        }
+
     }
 }

@@ -1,7 +1,4 @@
 package com.example.Analytics.Service;
-import com.couchbase.client.java.Bucket;
-import com.couchbase.client.java.Collection;
-import com.couchbase.client.java.kv.GetResult;
 import com.example.Analytics.Repository.AnalyticsRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.annotation.KafkaListener;
